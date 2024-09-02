@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageFilter
+import numpy as np
 
 imagen = None
 
@@ -60,6 +61,13 @@ def aplicar_filtro(event):
             inverso()
         elif filtro_seleccionado == "Mosaico":
             mosaico()
+        elif filtro_seleccionado == "Blur":
+            blur()
+        elif filtro_seleccionado == "Motion Blur":
+            motion_blur()
+        elif filtro_seleccionado == "Bordes":
+            find_edges()
+        
 
 # Filtros de color
 def tonos_gris1():
@@ -174,12 +182,110 @@ def mosaico():
 
         mostrar_imagen(imagen_mosaico)
 
+def blur():
+    global imagen
+    if imagen:
+        imagen_blur = imagen.copy()
+        pixeles = imagen_blur.load()
+        ancho, alto = imagen_blur.size
+
+        for y in range(1, alto-1):
+            for x in range(1, ancho-1):
+                vecinos = [
+                    pixeles[x-1, y-1], pixeles[x, y-1], pixeles[x+1, y-1],
+                    pixeles[x-1, y],   pixeles[x, y],   pixeles[x+1, y],
+                    pixeles[x-1, y+1], pixeles[x, y+1], pixeles[x+1, y+1]
+                ]
+                
+                # Calcular el promedio de los valores RGB de los vecinos
+                promedio_color = tuple(
+                    sum(p[i] for p in vecinos) // len(vecinos) for i in range(3)
+                )
+                
+                # Asignar el color promedio al píxel actual
+                pixeles[x, y] = promedio_color
+
+        mostrar_imagen(imagen_blur)
+
+
+def motion_blur():
+    global imagen
+    if imagen:
+        # Parámetros del filtro
+        blur_amount = 20  # Cantidad de desenfoque (ajusta según sea necesario)
+        kernel_size = blur_amount
+        kernel = [1] * kernel_size  # Kernel de desenfoque simple
+        kernel = [k / sum(kernel) for k in kernel]  # Normalizar el kernel
+
+        # Crear una imagen para el resultado
+        imagen_blur = imagen.copy()
+        pixeles = imagen_blur.load()
+        ancho, alto = imagen_blur.size
+
+        # Aplicar el kernel de motion blur
+        for y in range(alto):
+            for x in range(ancho):
+                r_sum = g_sum = b_sum = 0
+                for i in range(kernel_size):
+                    offset = x + i - kernel_size // 2
+                    if 0 <= offset < ancho:
+                        r, g, b = pixeles[offset, y]
+                        r_sum += r * kernel[i]
+                        g_sum += g * kernel[i]
+                        b_sum += b * kernel[i]
+
+                # Asignar el color promedio al píxel actual
+                pixeles[x, y] = (int(r_sum), int(g_sum), int(b_sum))
+
+        mostrar_imagen(imagen_blur)
+
+def find_edges():
+    global imagen
+    if imagen:
+        # Definir el kernel
+        filter_width = 5
+        filter_height = 5
+        filter_matrix = np.array([
+            [0, 0, -1, 0, 0],
+            [0, 0, -1, 0, 0],
+            [0, 0,  2, 0, 0],
+            [0, 0,  0, 0, 0],
+            [0, 0,  0, 0, 0]
+        ])
+        factor = 1.0
+        bias = 0.0
+
+        # Convertir imagen a escala de grises
+        imagen_gris = imagen.convert("L")
+        pixeles = imagen_gris.load()
+        ancho, alto = imagen_gris.size
+
+        # Crear una imagen para el resultado
+        imagen_bordes = Image.new("L", (ancho, alto))
+        pixeles_bordes = imagen_bordes.load()
+
+        # Aplicar el filtro
+        for y in range(filter_height // 2, alto - filter_height // 2):
+            for x in range(filter_width // 2, ancho - filter_width // 2):
+                r_sum = g_sum = b_sum = 0
+
+                # Aplicar el filtro a la vecindad del píxel (x, y)
+                for i in range(-filter_height // 2, filter_height // 2 + 1):
+                    for j in range(-filter_width // 2, filter_width // 2 + 1):
+                        pixel_value = pixeles[x + j, y + i]
+                        r_sum += pixel_value * filter_matrix[i + filter_height // 2, j + filter_width // 2]
+                
+                # Aplicar factor y sesgo
+                valor_filtro = factor * r_sum + bias
+                valor_filtro = min(max(int(valor_filtro), 0), 255)  # Asegurar que el valor esté en el rango [0, 255]
+
+                # Asignar el valor a la imagen de salida
+                pixeles_bordes[x, y] = valor_filtro
+
+        mostrar_imagen(imagen_bordes)
 
 
 
-
-                        
-        
 
 # Botones y lista
 boton_cargar = tk.Button(ventana, text="Cargar Imagen", command=cargar_imagen)
@@ -188,7 +294,7 @@ boton_cargar.pack(pady=20)
 cuadro_lista = tk.Listbox(ventana, height=4, width=15, selectmode="single")
 cuadro_lista.pack()
 
-filtros = ["Rojo", "Azul", "Verde", "Gris1","Gris2","Gris3","Brillo","Alto Contraste","Inverso","Mosaico"]
+filtros = ["Rojo", "Azul", "Verde", "Gris1","Gris2","Gris3","Brillo","Alto Contraste","Inverso","Mosaico","Blur","Motion Blur","Bordes"]
 
 for filtro in filtros:
     cuadro_lista.insert(tk.END, filtro)
