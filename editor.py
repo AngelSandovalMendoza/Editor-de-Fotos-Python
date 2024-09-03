@@ -67,6 +67,13 @@ def aplicar_filtro(event):
             motion_blur()
         elif filtro_seleccionado == "Bordes":
             find_edges()
+        elif filtro_seleccionado == "Sharpen":
+            sharpen()
+        elif filtro_seleccionado == "Emboss":
+            emboss()
+        elif filtro_seleccionado == "Promedio":
+            promedio()
+        
         
 
 # Filtros de color
@@ -284,8 +291,147 @@ def find_edges():
 
         mostrar_imagen(imagen_bordes)
 
+def sharpen():
+    global imagen
+    if imagen:
+        # Definir el kernel
+        filter_matrix = np.array([
+            [-1, -1, -1, -1, -1],
+            [-1,  2,  2,  2, -1],
+            [-1,  2,  8,  2, -1],
+            [-1,  2,  2,  2, -1],
+            [-1, -1, -1, -1, -1]
+        ])
+        factor = 1.0 / 8.0  # Ajuste del factor
+        bias = 0.0
+
+        # Convertir imagen a RGB
+        imagen_color = imagen.convert("RGB")
+        pixeles = imagen_color.load()
+        ancho, alto = imagen_color.size
+
+        # Crear una imagen para el resultado
+        imagen_sharpen = Image.new("RGB", (ancho, alto))
+        pixeles_sharpen = imagen_sharpen.load()
+
+        # Aplicar el filtro
+        for y in range(2, alto - 2):
+            for x in range(2, ancho - 2):
+                r_sum = g_sum = b_sum = 0
+
+                # Aplicar el filtro a la vecindad del píxel (x, y)
+                for i in range(-2, 3):
+                    for j in range(-2, 3):
+                        r, g, b = pixeles[x + j, y + i]
+                        kernel_value = filter_matrix[i + 2, j + 2]
+                        r_sum += r * kernel_value
+                        g_sum += g * kernel_value
+                        b_sum += b * kernel_value
+
+                # Aplicar factor y sesgo
+                r_filtro = min(max(int(factor * r_sum + bias), 0), 255)
+                g_filtro = min(max(int(factor * g_sum + bias), 0), 255)
+                b_filtro = min(max(int(factor * b_sum + bias), 0), 255)
+
+                # Asignar el valor a la imagen de salida
+                pixeles_sharpen[x, y] = (r_filtro, g_filtro, b_filtro)
+
+        mostrar_imagen(imagen_sharpen)
 
 
+def emboss():
+    global imagen
+    if imagen:
+        # Definir el kernel
+        filter_matrix = np.array([
+            [-1, -1, -1, -1,  0],
+            [-1, -1, -1,  0,  1],
+            [-1, -1,  0,  1,  1],
+            [-1,  0,  1,  1,  1],
+            [ 0,  1,  1,  1,  1]
+        ])
+        factor = 1.0 # Ajuste del factor
+        bias = 128.0
+
+        # Convertir imagen a RGB
+        imagen_color = imagen.convert("RGB")
+        pixeles = imagen_color.load()
+        ancho, alto = imagen_color.size
+
+        # Crear una imagen para el resultado
+        imagen_sharpen = Image.new("RGB", (ancho, alto))
+        pixeles_sharpen = imagen_sharpen.load()
+
+        # Aplicar el filtro
+        for y in range(2, alto - 2):
+            for x in range(2, ancho - 2):
+                r_sum = g_sum = b_sum = 0
+
+                # Aplicar el filtro a la vecindad del píxel (x, y)
+                for i in range(-2, 3):
+                    for j in range(-2, 3):
+                        r, g, b = pixeles[x + j, y + i]
+                        kernel_value = filter_matrix[i + 2, j + 2]
+                        r_sum += r * kernel_value
+                        g_sum += g * kernel_value
+                        b_sum += b * kernel_value
+
+                # Aplicar factor y sesgo
+                r_filtro = min(max(int(factor * r_sum + bias), 0), 255)
+                g_filtro = min(max(int(factor * g_sum + bias), 0), 255)
+                b_filtro = min(max(int(factor * b_sum + bias), 0), 255)
+
+                # Asignar el valor a la imagen de salida
+                pixeles_sharpen[x, y] = (r_filtro, g_filtro, b_filtro)
+
+        mostrar_imagen(imagen_sharpen)
+
+def promedio():
+    global imagen
+    if imagen:
+        # Definir el kernel
+        filter_matrix = np.array([
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1]
+        ])
+        factor = 1.0 / 25.0 # Ajuste del factor
+        bias = 0.0
+
+        # Convertir imagen a RGB
+        imagen_color = imagen.convert("RGB")
+        pixeles = imagen_color.load()
+        ancho, alto = imagen_color.size
+
+        # Crear una imagen para el resultado
+        imagen_sharpen = Image.new("RGB", (ancho, alto))
+        pixeles_sharpen = imagen_sharpen.load()
+
+        # Aplicar el filtro
+        for y in range(2, alto - 2):
+            for x in range(2, ancho - 2):
+                r_sum = g_sum = b_sum = 0
+
+                # Aplicar el filtro a la vecindad del píxel (x, y)
+                for i in range(-2, 3):
+                    for j in range(-2, 3):
+                        r, g, b = pixeles[x + j, y + i]
+                        kernel_value = filter_matrix[i + 2, j + 2]
+                        r_sum += r * kernel_value
+                        g_sum += g * kernel_value
+                        b_sum += b * kernel_value
+
+                # Aplicar factor y sesgo
+                r_filtro = min(max(int(factor * r_sum + bias), 0), 255)
+                g_filtro = min(max(int(factor * g_sum + bias), 0), 255)
+                b_filtro = min(max(int(factor * b_sum + bias), 0), 255)
+
+                # Asignar el valor a la imagen de salida
+                pixeles_sharpen[x, y] = (r_filtro, g_filtro, b_filtro)
+
+        mostrar_imagen(imagen_sharpen)
 
 # Botones y lista
 boton_cargar = tk.Button(ventana, text="Cargar Imagen", command=cargar_imagen)
@@ -294,7 +440,7 @@ boton_cargar.pack(pady=20)
 cuadro_lista = tk.Listbox(ventana, height=4, width=15, selectmode="single")
 cuadro_lista.pack()
 
-filtros = ["Rojo", "Azul", "Verde", "Gris1","Gris2","Gris3","Brillo","Alto Contraste","Inverso","Mosaico","Blur","Motion Blur","Bordes"]
+filtros = ["Rojo", "Azul", "Verde", "Gris1","Gris2","Gris3","Brillo","Alto Contraste","Inverso","Mosaico","Blur","Motion Blur","Bordes","Sharpen","Emboss","Promedio"]
 
 for filtro in filtros:
     cuadro_lista.insert(tk.END, filtro)
